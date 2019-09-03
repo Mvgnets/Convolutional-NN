@@ -17,9 +17,8 @@ import os
 print(tf.__version__)
 
 import pathlib
-#data_root = pathlib.Path('/content/drive/My Drive/Images2')
-data_root = pathlib.Path(r'C:\Users\EchoY\OneDrive\Desktop\ProjectData\train\images2')
-test_root = pathlib.Path(r'C:\Users\EchoY\OneDrive\Desktop\ProjectData\train\images2_test')
+data_root = pathlib.Path(r'##PATH TO TRAINING IMAGES##')
+test_root = pathlib.Path(r'##PATH TO TESTING IMAGES##')
 print(data_root)
 print(test_root)
 
@@ -45,6 +44,8 @@ train_datagen = keras.preprocessing.image.ImageDataGenerator(
                 rescale=1./255,
                 validation_split=0.2)
 
+
+# These convert the images to tensors to feed into the neural network
 train_generator = train_datagen.flow_from_directory(
     directory=data_root,
     target_size=(image_size, image_size),
@@ -80,6 +81,7 @@ test_generator = test_datagen.flow_from_directory(
     seed=42
 )
 
+# This section isn't vital but allows performance monitoring and graph plotting of training data over time
 class CollectBatchStats(tf.keras.callbacks.Callback):
   def __init__(self):
     self.batch_losses = []
@@ -90,6 +92,7 @@ class CollectBatchStats(tf.keras.callbacks.Callback):
     self.batch_acc.append(logs['acc'])
     self.model.reset_metrics()
     
+# Model definition
 model = Sequential()
 model.add(Conv2D(32, kernel_size=(3, 3),
                  activation='relu',
@@ -109,7 +112,7 @@ model.compile(loss = keras.losses.categorical_crossentropy,
                      
 batch_stats_callback = CollectBatchStats()
 
-checkpoint_path = r"C:\Users\EchoY\OneDrive\Desktop\ProjectData\train\conv_model\cp.ckpt"
+checkpoint_path = r"##TRAINED MODEL SAVE PATH##\cp.ckpt"
 checkpoint_dir = os.path.dirname(checkpoint_path)
 
 # Create checkpoint callback
@@ -117,6 +120,7 @@ cp_callback = tf.keras.callbacks.ModelCheckpoint(checkpoint_path,
                                                  save_weights_only=True,
                                                  verbose=1)
 
+# Use the generators to fit the model 
 model.fit_generator(train_generator,
                     steps_per_epoch = train_generator.samples // batch_size,
                     validation_data = validation_generator, 
@@ -141,7 +145,8 @@ labels = (train_generator.class_indices)
 labels = dict((v,k) for k,v in labels.items())
 predictions = [labels[k] for k in predicted_class_indices]
 
+#Create a new CSV of the file name and it's predicted class. This code is handy for Kaggle submissions
 filenames=test_generator.filenames
 results=pd.DataFrame({"Filename":filenames,
                       "Predictions":predictions})
-results.to_csv(r"C:\Users\EchoY\OneDrive\Desktop\ProjectData\train\results.csv",index=False)
+results.to_csv(r"##RESULTS CSV SAVE PATH##\results.csv",index=False)
